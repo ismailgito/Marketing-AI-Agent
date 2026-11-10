@@ -31,6 +31,7 @@ Work is on branch `fix/test-report-plan`, **uncommitted**. Phases 1–5 are done
 - **BUG-15:** notes writes are now atomic and serialised in-process; I did **not** add a cross-process file lock. Two job processes can still lose an update (never a torn file).
 - **Dropped the `google` extra** from `livekit-agents` and removed `chromadb`, `requirements.txt`. Imports, CLI and all tests still work.
 - `ruff format` is **not** enforced (it would rewrite ~10 files incl. the GIF script); only `ruff check` runs in CI.
+- **`README.md` was deliberately left unchanged** (owner's instruction). It is now slightly stale in three places: it says `requirements.txt` is "stale and unread" (the file has been deleted), lists the old `uvx pyright` typecheck command, and shows the roadmap item "Turn-level tests" as unchecked. `AGENTS.md` and `CUSTOMIZATION.md` carry the current commands.
 
 **Not verified (still open):**
 - `tests/test_agent_turns.py` (5 real-model tests) was written from the current LiveKit docs but **never executed**: it would send prompts through your LiveKit Inference account. Run `RUN_LLM_TESTS=1 uv run pytest tests/test_agent_turns.py -s` once and expect to adjust model/assertions.

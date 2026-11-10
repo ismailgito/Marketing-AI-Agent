@@ -131,7 +131,6 @@ agent_mcp/                  MCP server wrappers — networked, authenticated, ra
   toolsets.py               Wraps servers into MCPToolset objects with tool whitelists
 data/                       Runtime data (notes.json; a natural home for cached pulls)
 assets/                     README art — generated pixel GIFs and the architecture map
-tests/                      Offline pytest suite + opt-in real-model turn tests
 scripts/
   generate_readme_gifs.py   Rebuilds every GIF in assets/ from code
 .env.local                  All secrets (git-ignored)
@@ -235,7 +234,7 @@ Whitelist with `allowed_tools` and keep it to reads. A production voice agent wi
 - **`.env.local`, not `.env`.** Only the former is loaded.
 - **`get_current_time` needs `tzdata` on Windows**, otherwise `ZoneInfo` raises. The dependency is already in `pyproject.toml`.
 - **stdio MCP servers need a longer timeout.** The 5s default loses to `npx` cold starts; use `client_session_timeout_seconds=60`.
-- **No pip in `.venv`.** Use `uv add` / `uv sync`. `pyproject.toml` + `uv.lock` are the only dependency source (there is no `requirements.txt`).
+- **No pip in `.venv`.** Use `uv add` / `uv sync`; `requirements.txt` is stale and unread.
 
 ---
 
@@ -248,7 +247,7 @@ Whitelist with `allowed_tools` and keep it to reads. A production voice agent wi
 - [ ] Performance + funnel skills running against real pulls
 - [ ] SEO / AEO / GEO skill over a rankings connector
 - [ ] Budget and bid changes behind a propose-confirm-apply flow
-- [x] Offline test suite (tools, SSRF guard, MCP wiring) + opt-in real-model turn tests (`tests/`)
+- [ ] Turn-level tests with mocked toolsets
 
 ---
 
@@ -256,7 +255,7 @@ Whitelist with `allowed_tools` and keep it to reads. A production voice agent wi
 
 - Assistant instructions are spoken aloud — no markdown, asterisks or emoji in replies.
 - `scripts/generate_readme_gifs.py` rebuilds every animation in `assets/` from code: `uv run --with pillow python scripts/generate_readme_gifs.py`.
-- Checks: `uv run pytest -q`, `uv run ruff check .`, `uv run pyright` (CI runs all three).
+- Typecheck with `uvx --from pyright pyright --pythonpath .venv/Scripts/python.exe .`
 
 ## References
 
