@@ -1,6 +1,8 @@
 import datetime
 from zoneinfo import ZoneInfo
-from livekit.agents import function_tool # type: ignore 
+
+from livekit.agents import function_tool
+
 
 @function_tool
 async def get_current_time() -> str:

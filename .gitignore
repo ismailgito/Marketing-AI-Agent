@@ -9,3 +9,7 @@ __pycache__/
 
 # runtime state
 data/notes.json
+data/agent_data/
+data/notes.json.corrupt-*
+.pytest_cache/
+.ruff_cache/

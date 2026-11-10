@@ -71,7 +71,7 @@ class Assistant(Agent):
                 list_notes,
                 get_webpage_title,
                 get_weather,                      # <-- add here
-                get_livekit_docs_toolset(),
+                # the docs toolset is appended conditionally in agent.py (see Assistant.__init__)
             ],
         )
 ```
@@ -130,16 +130,17 @@ def get_weather_toolset() -> mcp.MCPToolset:
 ```python
 from agent_mcp.toolsets import get_weather_toolset
 
-tools=[
-    ...,
-    get_livekit_docs_toolset(),
-    get_weather_toolset(),      # <-- add
-]
+# in Assistant.__init__, next to where docs_toolset is appended:
+tools.append(get_weather_toolset())      # <-- add
 ```
+
+If the server can be down, connect it first like `connect_docs_toolset()` does in `agent.py`
+and only attach it (and mention it in the prompt) when `setup()` succeeded. The SDK swallows
+toolset setup errors, so otherwise the model keeps being told about tools it doesn't have.
 
 ### Removing an MCP toolset
 
-Remove the import and the `get_xxx_toolset()` call from `tools=[...]`.
+Remove the import and the `tools.append(...)` call, and any mention of its tools in the prompt.
 
 ### MCP traps
 
@@ -152,7 +153,7 @@ Remove the import and the `get_xxx_toolset()` call from `tools=[...]`.
 
 ## 3. System Instructions
 
-The "Data system instructions" live in the `Assistant` class in `agent.py` (lines 27–39). They are spoken aloud, so follow these constraints:
+The system instructions live in `BASE_INSTRUCTIONS` in `agent.py` (built by `build_instructions()`, which adds the docs-tools line only when the docs MCP server really connected). They are spoken aloud, so follow these constraints:
 
 - **No markdown, asterisks, or emojis** in replies.
 - Keep voice replies short; depth only on request.
@@ -238,7 +239,7 @@ def get_rag_toolset() -> mcp.MCPToolset:
 ```python
 # agent.py
 from agent_mcp.toolsets import get_rag_toolset
-tools=[..., get_livekit_docs_toolset(), get_rag_toolset()]
+tools.append(get_rag_toolset())   # in Assistant.__init__
 ```
 
 ### Ingest documents
@@ -287,10 +288,10 @@ uv add chromadb
 | Persistent memory | Notes already persist to `data/notes.json` | `skills/notes_skills.py` |
 | Knowledge base (RAG) | Add MCP RAG server + ingest script | `agent_mcp/`, `scripts/` |
 | External APIs | Weather, email, calendar, etc. | New `skills/*.py` (local) or `agent_mcp/` (MCP) |
-| Voice | `voice="Puck"` → other Gemini voices | `agent.py` line 58 |
-| Model | `model="google/gemini-3.8-live"` | `agent.py` line 57 |
+| Voice | `voice="Puck"` → other Gemini voices | `my_agent()` in `agent.py` (`voice=`) |
+| Model | `model="google/gemini-3.8-live"` | `my_agent()` in `agent.py` (`model=`) |
 | Secrets | API keys | `.env.local` |
-| Audio | Noise cancellation model | `agent.py` lines 66–69 |
+| Audio | Noise cancellation model | `my_agent()` in `agent.py` (`noise_cancellation=`) |
 | Deployment | Register worker against LiveKit Cloud | `uv run agent.py dev` |
 
 ---
@@ -309,10 +310,12 @@ Add your own, e.g.:
 
 ```
 OPENWEATHER_API_KEY=...
-MY_MCP_API_KEY=...
+MY_MCP_SERVER_URL=...      # used by get_authenticated_mcp_server()
+MY_MCP_API_KEY=...         # same; both are required, the function raises if either is empty
+AGENT_DATA_DIR=...         # optional: folder for the filesystem MCP server
 ```
 
-Read them with `os.environ["..."]` (note: `os.environ.get(...)` returns `None` if missing — consider failing loudly if a key is required).
+Read required keys with `os.environ["..."]` or fail loudly like `get_authenticated_mcp_server()` does, rather than sending an empty value.
 
 ---
 
@@ -322,6 +325,7 @@ Read them with `os.environ["..."]` (note: `os.environ.get(...)` returns `None` i
 uv sync                                  # install/repair deps
 uv run agent.py console                  # talk locally, no room needed
 uv run agent.py dev                      # register worker "my-agent" on LiveKit Cloud
+uv run pytest -q                         # offline tests; see AGENTS.md for the other suites
 ```
 
 ---
@@ -329,7 +333,7 @@ uv run agent.py dev                      # register worker "my-agent" on LiveKit
 ## Recommended Next Steps for a Personal Assistant
 
 1. **Rename the persona** — change `instructions=` to your name/tone.
-2. **Fix the time tool** — `uv add tzdata` (the `ZoneInfo("Asia/Kolkata")` call crashes on Windows without it).
+2. **Set your timezone** — `skills/time_skills.py` is hard-coded to `Asia/Kolkata`. `tzdata` is already a dependency, so any IANA zone works on Windows.
 3. **Add a calendar/email skill** — either as a `@function_tool` hitting your provider's API, or as an MCP server if the provider offers one.
 4. **Set up RAG** — ingest your notes, docs, and transcripts into Chroma and expose `search_knowledge`.
-5. **Wire in the filesystem toolset** — `get_filesystem_toolset()` is defined but not attached; create `C:\Users\Lenovo\Documents\Jarvis\agent_data` and add it to `tools=[...]` to let the agent read/write files safely.
+5. **Wire in the filesystem toolset** — `get_filesystem_toolset()` is defined but not attached. It serves `AGENT_DATA_DIR` (default `data/agent_data/`, created automatically); add it to `tools=[...]` in `Assistant.__init__` to let the agent read/write files there. Remember stdio servers expose every tool, so keep the folder narrow.

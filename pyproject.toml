@@ -3,9 +3,45 @@ name = "livekit-gemini-agent"
 version = "0.1.0"
 requires-python = ">=3.12"
 dependencies = [
-    "chromadb>=1.5.9",
-    "livekit-agents[mcp,google]~=1.8",
+    "aiohttp>=3.14.5",
+    "certifi>=2026.10.23",
+    "livekit-agents[mcp]~=1.8",
     "livekit-plugins-ai-coustics>=0.3.5",
     "python-dotenv>=1.2.4",
     "tzdata>=2026.6",
 ]
+
+[dependency-groups]
+dev = [
+    "pillow>=13.0.0",
+    "pyright>=1.1.414",
+    "pytest>=9.2.0",
+    "pytest-asyncio>=1.4.1.post1",
+    "ruff>=0.17.4",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests"]
+markers = [
+    "llm: needs a real LLM through LiveKit Inference (set RUN_LLM_TESTS=1)",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = [".venv"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+ignore = ["E501"]
+
+[tool.pyright]
+include = ["agent.py", "agent_mcp", "skills", "scripts", "tests"]
+pythonVersion = "3.12"
+venvPath = "."
+venv = ".venv"
+
+[tool.ruff.lint.per-file-ignores]
+"scripts/*" = ["B905"]  # README art script zips equal-length literals
